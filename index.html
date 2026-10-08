@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>D.M.Q - PC Assembly Lab 3D Corrected</title>
+
+  <!-- THREE.JS Y ORBIT CONTROLS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      min-height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #020617;
+      color: #f8fafc;
+      overflow-x: hidden;
+      touch-action: manipulation;
+    }
+    button { font-family: inherit; cursor: pointer; }
+    .pantalla {
+      display: none;
+      min-height: 100vh;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+    .pantalla.activa { display: flex; }
+    .pantalla::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(rgba(0, 170, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 170, 255, 0.05) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* INICIO */
+    #inicio {
+      justify-content: center;
+      align-items: center;
+      background: radial-gradient(circle at 50% 30%, #03204e 0%, #020c1e 40%, #01040a 80%);
+    }
+    .inicio-contenido {
+      position: relative;
+      z-index: 5;
+      text-align: center;
+      width: min(900px, 92%);
+      padding: 40px 20px;
+    }
+    .logo-dmq {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      margin-bottom: 20px;
+    }
+    .balon {
+      font-size: 110px;
+      line-height: 1;
+      margin-bottom: 10px;
+      filter: drop-shadow(0 0 15px rgba(255, 150, 0, 0.9)) drop-shadow(0 0 35px rgba(0, 180, 255, 0.5));
+      animation: flotar 3s ease-in-out infinite;
+    }
+    @keyframes flotar {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-12px) rotate(6deg); }
+    }
+    .dmq {
+      font-size: 60px;
+      font-weight: 900;
+      letter-spacing: 12px;
+      color: #ffffff;
+      text-shadow: 0 0 10px #00aaff, 0 0 25px #0066ff;
+    }
+    .subtitulo { margin-top: 15px; font-size: 14px; letter-spacing: 8px; color: #38bdf8; font-weight: bold; }
+    .inicio-contenido h1 { margin-top: 15px; font-size: clamp(36px, 6vw, 72px); font-weight: 900; color: white; text-shadow: 0 0 20px #0088ff; }
+    .descripcion { max-width: 680px; margin: 20px auto 35px; color: #94a3b8; font-size: 16px; line-height: 1.7; }
+    .boton-entrar {
+      border: 1px solid #38bdf8;
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: white;
+      padding: 18px 45px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      box-shadow: 0 0 20px rgba(2, 132, 199, 0.5);
+      transition: all 0.3s ease;
+    }
+    .boton-entrar:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 0 35px rgba(56, 189, 248, 0.8);
+      background: linear-gradient(135deg, #0369a1, #0284c7);
+    }
+    .btn-secundario {
+      padding: 12px 22px;
+      border-radius: 10px;
+      border: 1px solid #0369a1;
+      background: rgba(15, 23, 42, 0.8);
+      color: #7dd3fc;
+      font-weight: bold;
+      transition: all 0.25s;
+    }
+    .btn-secundario:hover {
+      background: #0284c7;
+      color: white;
+      box-shadow: 0 0 15px rgba(2, 132, 199, 0.5);
+    }
+
+    /* MODOS */
+    #modos {
+      justify-content: center;
+      align-items: center;
+      background: radial-gradient(circle at 50% 20%, #052e5a, #021128 50%, #01050e);
+    }
+    .modos-contenido { position: relative; z-index: 5; width: min(1150px, 92%); text-align: center; padding: 40px 20px; }
+    .contenedor-modos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin: 35px auto; }
+    .tarjeta-modo {
+      padding: 30px 24px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 18px;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(10px);
+      transition: all 0.35s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .tarjeta-modo:hover { transform: translateY(-8px); border-color: #38bdf8; box-shadow: 0 0 30px rgba(56, 189, 248, 0.3); }
+    .icono-modo { font-size: 55px; margin-bottom: 12px; }
+    .tarjeta-modo h3 { font-size: 20px; color: #f8fafc; margin-bottom: 10px; }
+    .tarjeta-modo p { color: #94a3b8; font-size: 14px; line-height: 1.5; margin-bottom: 20px; }
+
+    /* CONCEPTOS */
+    #conceptos {
+      flex-direction: column;
+      background: radial-gradient(circle at 50% 0%, #03204e, #020c1e 60%, #01040a);
+      padding: 30px;
+      align-items: center;
+    }
+    .conceptos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      width: min(1200px, 100%);
+      margin-top: 25px;
+      max-height: 75vh;
+      overflow-y: auto;
+      padding-right: 10px;
+    }
+    .concepto-card {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 14px;
+      padding: 20px;
+      transition: 0.3s;
+    }
+    .concepto-card:hover { border-color: #0284c7; box-shadow: 0 0 20px rgba(2, 132, 199, 0.25); }
+    .concepto-card h3 { color: #38bdf8; font-size: 18px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+    .concepto-card p { color: #cbd5e1; font-size: 13px; line-height: 1.6; }
+
+    /* PRÁCTICA */
+    #practica {
+      flex-direction: column;
+      background: radial-gradient(circle at 50% 0%, #03204e, #020c1e 60%, #01040a);
+      padding: 20px;
+    }
+    .practica-header { width: min(1350px, 100%); margin: 0 auto 15px; display: flex; justify-content: space-between; align-items: center; }
+    .progreso-barra { width: 250px; height: 10px; background: #0f172a; border-radius: 20px; border: 1px solid rgba(56, 189, 248, 0.3); overflow: hidden; margin-top: 5px; }
+    .progreso-relleno { width: 0%; height: 100%; background: linear-gradient(90deg, #0284c7, #38bdf8); transition: width 0.4s ease; }
+    .practica-principal { width: min(1350px, 100%); margin: 0 auto; display: grid; grid-template-columns: 320px 1fr; gap: 20px; height: calc(100vh - 160px); }
+    .lista-componentes {
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.9);
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .componente {
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      background: #09152a;
+      color: white;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: grab;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .componente:hover { border-color: #38bdf8; background: #0c2142; transform: translateX(4px); }
+    .componente.colocado { opacity: 0.3; cursor: default; border-color: #22c55e; background: rgba(34, 197, 94, 0.1); }
+    .zona-pc-3d { position: relative; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 16px; background: #010409; overflow: hidden; display: flex; flex-direction: column; }
+    #canvas-container { width: 100%; height: 100%; }
+    .overlay-slots {
+      position: absolute;
+      bottom: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      background: rgba(15, 23, 42, 0.85);
+      padding: 10px 15px;
+      border-radius: 12px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      backdrop-filter: blur(8px);
+      max-width: 95%;
+      overflow-x: auto;
+    }
+    .slot {
+      min-width: 85px;
+      padding: 8px;
+      border: 2px dashed rgba(56, 189, 248, 0.4);
+      border-radius: 8px;
+      text-align: center;
+      font-size: 10px;
+      font-weight: bold;
+      color: #94a3b8;
+      background: rgba(2, 132, 199, 0.05);
+      transition: 0.25s;
+    }
+    .slot.activo { border-color: #38bdf8; background: rgba(56, 189, 248, 0.25); }
+    .slot.ocupado { border-style: solid; border-color: #22c55e; color: #4ade80; background: rgba(34, 197, 94, 0.15); }
+
+    /* PREGUNTAS */
+    #preguntas { justify-content: center; align-items: center; background: radial-gradient(circle at 50% 20%, #052e5a, #021128 50%, #01050e); padding: 20px; }
+    .quiz-contenedor { width: min(800px, 94%); }
+    .quiz-caja { border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 18px; background: rgba(15, 23, 42, 0.9); padding: 30px; box-shadow: 0 0 30px rgba(2, 132, 199, 0.2); }
+    .pregunta { font-size: 22px; margin-bottom: 20px; line-height: 1.4; }
+    .respuestas { display: grid; gap: 12px; }
+    .respuesta { padding: 15px; border-radius: 10px; border: 1px solid rgba(56, 189, 248, 0.2); background: #09152a; color: white; text-align: left; font-size: 15px; transition: 0.2s; }
+    .respuesta:hover { border-color: #38bdf8; background: #0c2142; }
+    .respuesta.correcta { border-color: #22c55e; background: rgba(34, 197, 94, 0.25); }
+    .respuesta.incorrecta { border-color: #ef4444; background: rgba(239, 68, 68, 0.25); }
+
+    /* NOTIFICACIONES */
+    .mensaje {
+      position: fixed;
+      z-index: 2000;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      padding: 16px 28px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      opacity: 0;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .mensaje.mostrar { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .mensaje.exito { background: #064e3b; border: 1px solid #10b981; color: #a7f3d0; }
+    .mensaje.error { background: #7f1d1d; border: 1px solid #ef4444; color: #fecaca; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #020617; }
+    ::-webkit-scrollbar-thumb { background: #0284c7; border-radius: 4px; }
+
+    @media (max-width: 850px) {
+      .contenedor-modos { grid-template-columns: 1fr; }
+      .practica-principal { grid-template-columns: 1fr; height: auto; }
+      .overlay-slots { position: relative; bottom: 0; left: 0; transform: none; width: 100%; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- PANTALLA: INICIO -->
+  <section id="inicio" class="pantalla activa">
+    <div class="inicio-contenido">
+      <div class="logo-dmq">
+        <div class="balon">🏀</div>
+        <div class="dmq">D.M.Q</div>
+      </div>
+      <div class="subtitulo">SIMULADOR INTERACTIVO 3D</div>
+      <h1>PC ASSEMBLY LAB</h1>
+      <p class="descripcion">
+        Aprende a reconocer, comprender y ensamblar los componentes internos de una computadora mediante un entorno 3D realista con efectos de iluminación avanzados.
+      </p>
+      <button class="boton-entrar" onclick="mostrarPantalla('modos')">🚀 ENTRAR</button>
+    </div>
+  </section>
+
+  <!-- PANTALLA: SELECCIÓN DE MODOS -->
+  <section id="modos" class="pantalla">
+    <div class="modos-contenido">
+      <div class="logo-dmq">
+        <div class="balon" style="font-size: 60px;">🏀</div>
+        <h2>SELECCIONA UN MODO</h2>
+        <p style="color: #94a3b8; margin-top: 5px;">Elige la experiencia de aprendizaje que prefieras</p>
+      </div>
+
+      <div class="contenedor-modos">
+        <div class="tarjeta-modo">
+          <div>
+            <div class="icono-modo">📖</div>
+            <h3>CONCEPTOS</h3>
+            <p>Aprende el rol y funcionamiento técnico de cada componente de una PC.</p>
+          </div>
+          <button class="btn-secundario" onclick="mostrarPantalla('conceptos')">EXPLORAR</button>
+        </div>
+
+        <div class="tarjeta-modo">
+          <div>
+            <div class="icono-modo">🧩</div>
+            <h3>PRÁCTICA 3D</h3>
+            <p>Arrastra y ensambla los componentes dentro de un gabinete virtual interactivo.</p>
+          </div>
+          <button class="btn-secundario" onclick="mostrarPantalla('practica'); init3D();">COMENZAR</button>
+        </div>
+
+        <div class="tarjeta-modo">
+          <div>
+            <div class="icono-modo">❓</div>
+            <h3>PREGUNTAS</h3>
+            <p>Pon a prueba tus conocimientos con un cuestionario técnico de 10 preguntas.</p>
+          </div>
+          <button class="btn-secundario" onclick="mostrarPantalla('preguntas'); iniciarQuiz();">EVALUAR</button>
+        </div>
+      </div>
+
+      <button class="btn-secundario" onclick="mostrarPantalla('inicio')">← VOLVER AL INICIO</button>
+    </div>
+  </section>
+
+  <!-- PANTALLA: CONCEPTOS DE COMPONENTES -->
+  <section id="conceptos" class="pantalla">
+    <h2 style="font-size: 28px; color: #f8fafc; text-shadow: 0 0 15px #0284c7;">📖 CONCEPTOS DE COMPONENTES</h2>
+    <p style="color: #94a3b8; margin-top: 5px;">Aprende las funciones esenciales antes de empezar el ensamblaje</p>
+
+    <div class="conceptos-grid">
+      <div class="concepto-card">
+        <h3>🟦 Placa Madre (Motherboard)</h3>
+        <p>Es la tarjeta de circuito impreso principal que interconecta la CPU, RAM, almacenamiento y periféricos, permitiendo la comunicación eléctrica entre todos ellos.</p>
+      </div>
+      <div class="concepto-card">
+        <h3>🧠 Procesador (CPU)</h3>
+        <p>El "cerebro" del equipo. Ejecuta instrucciones, realiza cálculos aritméticos y gestiona los procesos solicitados por el sistema operativo y programas.</p>
+      </div>
+      <div class="concepto-card">
+        <h3>💾 Memoria RAM</h3>
+        <p>Almacenamiento volátil de ultra alta velocidad que guarda temporalmente las instrucciones y datos activos que el procesador necesita inmediatamente.</p>
+      </div>
+      <div class="concepto-card">
+        <h3>🎮 Tarjeta Gráfica (GPU)</h3>
+        <p>Unidad de procesamiento especializada en renderizar imágenes, gráficos 3D y video, liberando de carga de cálculo al procesador principal.</p>
+      </div>
+      <div class="concepto-card">
+        <h3>⚡ Fuente de Poder (PSU)</h3>
+        <p>Convierte la corriente alterna (AC) de la red eléctrica en corriente continua (DC) estable, distribuyendo voltajes precisos a cada componente interno.</p>
+      </div>
+      <div class="concepto-card">
+        <h3>💿 SSD M.2</h3>
+        <p>Unidad de estado sólido de alta velocidad basada en memoria flash. Almacena de forma permanente el sistema operativo, juegos y datos.</p>
+      </div>
+      <div class="concepto-card">
+        <h3>💧 Refrigeración Líquida (AIO)</h3>
+        <p>Sistema cerrado que circula líquido refrigerante desde un bloque de agua sobre la CPU hacia un radiador enfriado por ventiladores.</p>
+      </div>
+      <div class="concepto-card">
+        <h3>🧪 Pasta Térmica</h3>
+        <p>Compuerta conductora térmica que llena las microscópicas imperfecciones de aire entre la superficie metálica de la CPU y el disipador.</p>
+      </div>
+      <div class="concepto-card">
+        <h3>🔌 Cables de Alimentación</h3>
+        <p>Red de cables recubiertos que conectan la PSU hacia la placa base, GPU y unidades de almacenamiento suministrando la potencia requerida.</p>
+      </div>
+    </div>
+
+    <button class="btn-secundario" style="margin-top: 25px;" onclick="mostrarPantalla('modos')">← VOLVER A MODOS</button>
+  </section>
+
+  <!-- PANTALLA: MODO PRÁCTICA (VISOR 3D REALISTA CORREGIDO) -->
+  <section id="practica" class="pantalla">
+    <div class="practica-header">
+      <div>
+        <h2 style="font-size: 24px;">🧩 MODO PRÁCTICA 3D REALISTA</h2>
+        <div style="color: #38bdf8; font-size: 14px; font-weight: bold; margin-top: 3px;">
+          Progreso: <span id="contador">0 / 12</span>
+        </div>
+        <div class="progreso-barra">
+          <div id="progresoRelleno" class="progreso-relleno"></div>
+        </div>
+      </div>
+      <div>
+        <button class="btn-secundario" onclick="reiniciarPractica()">🔄 REINICIAR</button>
+        <button class="btn-secundario" onclick="mostrarPantalla('modos')">← MODOS</button>
+      </div>
+    </div>
+
+    <div class="practica-principal">
+      <div class="lista-componentes">
+        <h3 style="font-size: 15px; color: #38bdf8; margin-bottom: 5px;">COMPONENTES</h3>
+
+        <div class="componente" draggable="true" data-componente="Placa Madre" ondragstart="arrastrar(event)">
+          <span>🟦 Placa Madre ATX</span>
+        </div>
+        <div class="componente" draggable="true" data-componente="CPU" ondragstart="arrastrar(event)">
+          <span>🧠 Procesador CPU</span>
+        </div>
+        <div class="componente" draggable="true" data-componente="Pasta Térmica" ondragstart="arrastrar(event)">
+          <span>🧪 Pasta Térmica</span>
+        </div>
+        <div class="componente" draggable="true" data-componente="RAM" ondragstart="arrastrar(event)">
+          <span>💾 Memoria RAM RGB</span>
+        </div>
+        <div class="componente" draggable="true" data-componente="GPU" ondragstart="arrastrar(event)">
+          <span>🎮 Tarjeta Gráfica GPU</span>
+        </div>
+        <div class="componente" draggable="true" data-componente="SSD" ondragstart="arrastrar(event)">
+          <span>💿 SSD M.2 NVMe</span>
+        </div>
+        <div class="componente" draggable="true" data-componente="PSU" ondragstart="arrastrar(event)">
+          <span>⚡ Fuente de Poder Mod.</span>
+        </div>
+        <div class="componente" draggable="true" data-componente="AIO" ondragstart="arrastrar(event)">
+          <span>💧 Ref. Líquida AIO</span>
+        </div>
+        <div class="componente" draggable="true" data-componente="HDD" ondragstart="arrastrar(event)">
+          <span>💽 Disco Duro 3.5"</span>
+        </div>
+        <div class="componente" draggable="true" data-componente="DVD" ondragstart="arrastrar(event)">
+          <span>📀 Lector Óptico DVD</span>
+        </div>
+        <div class="componente" draggable="true" data-componente="FAN" ondragstart="arrastrar(event)">
+          <span>🌀 Ventilador RGB</span>
+        </div>
+        <div class="componente" draggable="true" data-componente="Cables" ondragstart="arrastrar(event)">
+          <span>🔌 Cables Mallados</span>
+        </div>
+      </div>
+
+      <div class="zona-pc-3d">
+        <div id="canvas-container"></div>
+
+        <div class="overlay-slots">
+          <div class="slot" data-acepta="Placa Madre" ondragover="permitirSoltar(event)" ondrop="soltar(event)">PLACA MADRE</div>
+          <div class="slot" data-acepta="CPU" ondragover="permitirSoltar(event)" ondrop="soltar(event)">CPU</div>
+          <div class="slot" data-acepta="Pasta Térmica" ondragover="permitirSoltar(event)" ondrop="soltar(event)">PASTA TÉRMICA</div>
+          <div class="slot" data-acepta="RAM" ondragover="permitirSoltar(event)" ondrop="soltar(event)">RAM</div>
+          <div class="slot" data-acepta="GPU" ondragover="permitirSoltar(event)" ondrop="soltar(event)">GPU</div>
+          <div class="slot" data-acepta="SSD" ondragover="permitirSoltar(event)" ondrop="soltar(event)">SSD M.2</div>
+          <div class="slot" data-acepta="AIO" ondragover="permitirSoltar(event)" ondrop="soltar(event)">REFRIGERACIÓN</div>
+          <div class="slot" data-acepta="PSU" ondragover="permitirSoltar(event)" ondrop="soltar(event)">FUENTE</div>
+          <div class="slot" data-acepta="HDD" ondragover="permitirSoltar(event)" ondrop="soltar(event)">HDD</div>
+          <div class="slot" data-acepta="DVD" ondragover="permitirSoltar(event)" ondrop="soltar(event)">DVD</div>
+          <div class="slot" data-acepta="FAN" ondragover="permitirSoltar(event)" ondrop="soltar(event)">VENTILADOR</div>
+          <div class="slot" data-acepta="Cables" ondragover="permitirSoltar(event)" ondrop="soltar(event)">CABLES</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANTALLA: MODO PREGUNTAS -->
+  <section id="preguntas" class="pantalla">
+    <div class="quiz-contenedor">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="font-size: 26px;">❓ MODO PREGUNTAS</h2>
+        <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid #0284c7; padding: 10px 18px; border-radius: 10px; font-weight: bold; color: #38bdf8;">
+          PUNTUACIÓN: <span id="puntuacion">0</span>
+        </div>
+      </div>
+
+      <div class="quiz-caja">
+        <div id="quiz">
+          <div style="color: #38bdf8; font-weight: bold; margin-bottom: 15px;">
+            PREGUNTA <span id="numeroPregunta">1</span> / 10
+          </div>
+          <div id="textoPregunta" class="pregunta"></div>
+          <div id="respuestas" class="respuestas"></div>
+
+          <div style="display: flex; justify-content: space-between; margin-top: 25px;">
+            <button class="btn-secundario" onclick="mostrarPantalla('modos')">← MODOS</button>
+            <button id="btnSiguiente" class="boton-entrar" style="padding: 12px 25px;" disabled onclick="siguientePregunta()">SIGUIENTE →</button>
+          </div>
+        </div>
+
+        <div id="resultado" style="display: none; text-align: center;">
+          <h2>🏆 EVALUACIÓN COMPLETADA</h2>
+          <div id="resultadoPuntaje" style="font-size: 60px; font-weight: 900; color: #38bdf8; margin: 15px 0;">0 / 10</div>
+          <p style="color: #94a3b8; margin-bottom: 25px;">Has finalizado la prueba de conocimientos sobre hardware de PC.</p>
+          <button class="boton-entrar" onclick="iniciarQuiz()">🔄 REPETIR</button>
+          <br><br>
+          <button class="btn-secundario" onclick="mostrarPantalla('modos')">← VOLVER A MODOS</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="mensaje" class="mensaje"></div>
+
+  <script>
+    /* NAVEGACIÓN DE PANTALLAS */
+    function mostrarPantalla(id) {
+      if (id === 'modo') id = 'modos';
+      document.querySelectorAll(".pantalla").forEach(p => p.classList.remove("activa"));
+      const destino = document.getElementById(id);
+      if (destino) {
+        destino.classList.add("activa");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }
+
+    function mostrarNotificacion(texto, tipo = "exito") {
+      const msg = document.getElementById("mensaje");
+      msg.textContent = texto;
+      msg.className = `mensaje ${tipo} mostrar`;
+      setTimeout(() => { msg.classList.remove("mostrar"); }, 2600);
+    }
+
+    /* MOTOR 3D Y MODELADO REALISTA CORREGIDO */
+    let scene, camera, renderer, controls;
+    let is3DInitialized = false;
+    const meshComponents = {};
+    let motherboardGroup;
+
+    function crearTexturaMotherboardRealista() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = '#0a0e17';
+      ctx.fillRect(0, 0, 1024, 1024);
+
+      ctx.lineWidth = 1.5;
+      for (let i = 0; i < 220; i++) {
+        ctx.strokeStyle = Math.random() > 0.4 ? '#1d4ed8' : '#d97706';
+        ctx.beginPath();
+        let x = Math.random() * 1024;
+        let y = Math.random() * 1024;
+        ctx.moveTo(x, y);
+        let len = Math.random() * 120 + 30;
+        if (Math.random() > 0.5) {
+          ctx.lineTo(x + len, y);
+          ctx.lineTo(x + len + 30, y + (Math.random() > 0.5 ? 30 : -30));
+        } else {
+          ctx.lineTo(x, y + len);
+          ctx.lineTo(x, y + len + 30);
+        }
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = '#fbbf24';
+      for (let i = 0; i < 400; i++) {
+        ctx.beginPath();
+        ctx.arc(Math.random() * 1024, Math.random() * 1024, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      return new THREE.CanvasTexture(canvas);
+    }
+
+    function init3D() {
+      if (is3DInitialized) return;
+      const container = document.getElementById('canvas-container');
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x040814);
+
+      camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+      camera.position.set(3.2, 1.5, 3.5);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.25;
+      container.appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxPolarAngle = Math.PI / 2 + 0.05;
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+      scene.add(ambientLight);
+
+      const mainLight = new THREE.DirectionalLight(0xffffff, 2.2);
+      mainLight.position.set(5, 8, 5);
+      mainLight.castShadow = true;
+      mainLight.shadow.mapSize.width = 2048;
+      mainLight.shadow.mapSize.height = 2048;
+      mainLight.shadow.bias = -0.0001;
+      scene.add(mainLight);
+
+      const blueFill = new THREE.DirectionalLight(0x00aaff, 1.2);
+      blueFill.position.set(-5, 3, -2);
+      scene.add(blueFill);
+
+      const warmFill = new THREE.DirectionalLight(0xffaa55, 0.8);
+      warmFill.position.set(0, -4, 4);
+      scene.add(warmFill);
+
+      construirChasisRealista();
+      crearModelosComponentesRealistas();
+
+      window.addEventListener('resize', onResize);
+      animate();
+      is3DInitialized = true;
+    }
+
+    function construirChasisRealista() {
+      const gabineteGroup = new THREE.Group();
+      const matChapa = new THREE.MeshStandardMaterial({ color: 0x111827, metalness: 0.85, roughness: 0.25 });
+      const matChapaInterna = new THREE.MeshStandardMaterial({ color: 0x1f2937, metalness: 0.6, roughness: 0.4 });
+      const matCristal = new THREE.MeshPhysicalMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.12, transmission: 0.92, roughness: 0.05, reflectivity: 0.9 });
+
+      const placaSosten = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.9, 2.6), matChapaInterna);
+      placaSosten.position.set(-0.8, 0, 0);
+      placaSosten.receiveShadow = true;
+      gabineteGroup.add(placaSosten);
+
+      const posCols = [[-0.82, 0, -1.3], [-0.82, 0, 1.3], [0.95, 0, -1.3], [0.95, 0, 1.3]];
+      posCols.forEach(p => {
+        const col = new THREE.Mesh(new THREE.BoxGeometry(0.06, 3.1, 0.06), matChapa);
+        col.position.set(p[0], p[1], p[2]);
+        gabineteGroup.add(col);
+      });
+
+      const tapaSuperior = new THREE.Mesh(new THREE.BoxGeometry(1.83, 0.05, 2.66), matChapa);
+      tapaSuperior.position.set(0.065, 1.55, 0);
+      gabineteGroup.add(tapaSuperior);
+
+      const tapaInferior = new THREE.Mesh(new THREE.BoxGeometry(1.83, 0.05, 2.66), matChapa);
+      tapaInferior.position.set(0.065, -1.55, 0);
+      gabineteGroup.add(tapaInferior);
+
+      const psuCover = new THREE.Mesh(new THREE.BoxGeometry(1.78, 0.55, 2.6), matChapaInterna);
+      psuCover.position.set(0.065, -1.25, 0);
+      psuCover.receiveShadow = true;
+      psuCover.castShadow = true;
+      gabineteGroup.add(psuCover);
+
+      const cristal = new THREE.Mesh(new THREE.BoxGeometry(1.78, 3.0, 0.02), matCristal);
+      cristal.position.set(0.065, 0, 1.31);
+      gabineteGroup.add(cristal);
+
+      scene.add(gabineteGroup);
+    }
+
+    function crearModelosComponentesRealistas() {
+      const texMotherboard = crearTexturaMotherboardRealista();
+
+      const matPcb = new THREE.MeshStandardMaterial({ color: 0x0f172a, map: texMotherboard, roughness: 0.3, metalness: 0.2 });
+      const matMetalAlu = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.15 });
+      const matMetalOscuro = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.3 });
+      const matPlasticoNegro = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 });
+      const matRGB = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 2.2 });
+
+      // 1. PLACA MADRE
+      motherboardGroup = new THREE.Group();
+
+      const pcbBase = new THREE.Mesh(new THREE.BoxGeometry(2.3, 1.9, 0.04), matPcb);
+      pcbBase.castShadow = true;
+      pcbBase.receiveShadow = true;
+      motherboardGroup.add(pcbBase);
+
+      const vrm1 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.8, 0.12), matMetalOscuro);
+      vrm1.position.set(-0.8, 0.45, 0.08);
+      motherboardGroup.add(vrm1);
+
+      const vrm2 = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.25, 0.12), matMetalOscuro);
+      vrm2.position.set(-0.35, 0.85, 0.08);
+      motherboardGroup.add(vrm2);
+
+      const cpuSocket = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.42, 0.03), matMetalAlu);
+      cpuSocket.position.set(-0.38, 0.4, 0.03);
+      motherboardGroup.add(cpuSocket);
+
+      for (let i = 0; i < 4; i++) {
+        const slot = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.8, 0.04), matPlasticoNegro);
+        slot.position.set(0.1 + (i * 0.07), 0.4, 0.035);
+        motherboardGroup.add(slot);
+      }
+
+      for (let i = 0; i < 2; i++) {
+        const pcie = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.05, 0.04), matMetalAlu);
+        pcie.position.set(-0.2, -0.2 - (i * 0.35), 0.035);
+        motherboardGroup.add(pcie);
+      }
+
+      motherboardGroup.rotation.y = Math.PI / 2;
+      motherboardGroup.position.set(-0.76, 0.25, 0);
+      motherboardGroup.visible = false;
+      scene.add(motherboardGroup);
+      meshComponents["Placa Madre"] = motherboardGroup;
+
+      // 2. CPU
+      const cpuGroup = new THREE.Group();
+      const ihs = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.38, 0.035), matMetalAlu);
+      ihs.castShadow = true;
+      cpuGroup.add(ihs);
+      cpuGroup.position.set(-0.38, 0.4, 0.05);
+      cpuGroup.visible = false;
+      motherboardGroup.add(cpuGroup);
+      meshComponents["CPU"] = cpuGroup;
+
+      // 3. PASTA TÉRMICA
+      const pastaGroup = new THREE.Group();
+      const dot = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.015, 16), new THREE.MeshStandardMaterial({ color: 0xd1d5db, roughness: 0.9 }));
+      dot.rotation.x = Math.PI / 2;
+      pastaGroup.add(dot);
+      pastaGroup.position.set(-0.38, 0.4, 0.075);
+      pastaGroup.visible = false;
+      motherboardGroup.add(pastaGroup);
+      meshComponents["Pasta Térmica"] = pastaGroup;
+
+      // 4. MEMORIA RAM
+      const ramGroup = new THREE.Group();
+      const bodyRam = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.76, 0.12), matMetalOscuro);
+      const topRgb = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.76, 0.025), matRGB);
+      topRgb.position.z = 0.065;
+      ramGroup.add(bodyRam);
+      ramGroup.add(topRgb);
+      ramGroup.position.set(0.1, 0.4, 0.08);
+      ramGroup.visible = false;
+      motherboardGroup.add(ramGroup);
+      meshComponents["RAM"] = ramGroup;
+
+      // 5. TARJETA GRÁFICA
+      const gpuGroup = new THREE.Group();
+      const gpuBody = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.14, 0.48), matPlasticoNegro);
+      const gpuBackplate = new THREE.Mesh(new THREE.BoxGeometry(1.06, 0.015, 0.49), matMetalOscuro);
+      gpuBackplate.position.y = 0.07;
+
+      for (let f = -1; f <= 1; f += 2) {
+        const fan = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.02, 16), matMetalOscuro);
+        fan.position.set(f * 0.25, -0.075, 0);
+        gpuGroup.add(fan);
+      }
+
+      gpuGroup.add(gpuBody);
+      gpuGroup.add(gpuBackplate);
+      gpuGroup.position.set(-0.2, -0.2, 0.27);
+      gpuGroup.visible = false;
+      motherboardGroup.add(gpuGroup);
+      meshComponents["GPU"] = gpuGroup;
+
+      // 6. SSD M.2
+      const ssdGroup = new THREE.Group();
+      const ssdPcb = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.09, 0.018), matPcb);
+      const ssdShield = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.085, 0.02), matMetalOscuro);
+      ssdShield.position.z = 0.015;
+      ssdGroup.add(ssdPcb);
+      ssdGroup.add(ssdShield);
+      ssdGroup.position.set(-0.2, 0.08, 0.045);
+      ssdGroup.visible = false;
+      motherboardGroup.add(ssdGroup);
+      meshComponents["SSD"] = ssdGroup;
+
+      // 7. FUENTE DE PODER
+      const psuGroup = new THREE.Group();
+      const psuBox = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.5, 0.85), matMetalOscuro);
+      psuBox.castShadow = true;
+      psuGroup.add(psuBox);
+      psuGroup.position.set(-0.1, -1.25, -0.6);
+      psuGroup.visible = false;
+      scene.add(psuGroup);
+      meshComponents["PSU"] = psuGroup;
+
+      // 8. REFRIGERACIÓN LÍQUIDA AIO
+      const aioGroup = new THREE.Group();
+
+      const aioBlock = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.08, 32), matPlasticoNegro);
+      aioBlock.rotation.x = Math.PI / 2;
+      aioBlock.position.set(-0.38, 0.4, 0.1);
+
+      const aioRgbRing = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.09, 32), matRGB);
+      aioRgbRing.rotation.x = Math.PI / 2;
+      aioRgbRing.position.set(-0.38, 0.4, 0.105);
+
+      const radiatorMesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.22, 0.12), matMetalOscuro);
+      radiatorMesh.position.set(-0.2, 1.15, 0.4);
+
+      for (let xOffset of [-0.4, 0.4]) {
+        const radFan = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.04, 24), matPlasticoNegro);
+        radFan.rotation.x = Math.PI / 2;
+        radFan.position.set(xOffset - 0.2, 1.15, 0.32);
+        aioGroup.add(radFan);
+      }
+
+      const matTubo = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.5 });
+
+      const curve1 = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-0.38, 0.4, 0.12),
+        new THREE.Vector3(-0.38, 0.75, 0.28),
+        new THREE.Vector3(-0.3, 1.1, 0.38)
+      ]);
+      const tube1 = new THREE.Mesh(new THREE.TubeGeometry(curve1, 20, 0.02, 8, false), matTubo);
+
+      const curve2 = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-0.32, 0.4, 0.12),
+        new THREE.Vector3(-0.25, 0.75, 0.28),
+        new THREE.Vector3(-0.1, 1.1, 0.38)
+      ]);
+      const tube2 = new THREE.Mesh(new THREE.TubeGeometry(curve2, 20, 0.02, 8, false), matTubo);
+
+      aioGroup.add(aioBlock);
+      aioGroup.add(aioRgbRing);
+      aioGroup.add(radiatorMesh);
+      aioGroup.add(tube1);
+      aioGroup.add(tube2);
+
+      aioGroup.visible = false;
+      motherboardGroup.add(aioGroup);
+      meshComponents["AIO"] = aioGroup;
+
+      // 9. DISCO DURO HDD
+      const hddGroup = new THREE.Group();
+      const hddBody = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.14, 0.75), matMetalAlu);
+      hddBody.castShadow = true;
+      hddGroup.add(hddBody);
+      hddGroup.position.set(0.4, -1.25, 0.6);
+      hddGroup.visible = false;
+      scene.add(hddGroup);
+      meshComponents["HDD"] = hddGroup;
+
+      // 10. LECTOR ÓPTICO DVD
+      const dvdGroup = new THREE.Group();
+      const dvdBody = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.2, 0.85), matMetalOscuro);
+      dvdGroup.add(dvdBody);
+      dvdGroup.position.set(0.4, 1.15, 0.5);
+      dvdGroup.visible = false;
+      scene.add(dvdGroup);
+      meshComponents["DVD"] = dvdGroup;
+
+      // 11. VENTILADOR RGB TRASERO
+      const fanGroup = new THREE.Group();
+      const fanFrame = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.55, 0.55), matPlasticoNegro);
+      const fanRing = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.055, 24), matRGB);
+      fanRing.rotation.z = Math.PI / 2;
+      fanGroup.add(fanFrame);
+      fanGroup.add(fanRing);
+      fanGroup.position.set(-0.76, 0.55, -0.75);
+      fanGroup.visible = false;
+      scene.add(fanGroup);
+      meshComponents["FAN"] = fanGroup;
+
+      // 12. CABLES DE ENERGÍA (ACOMODADOS: CONEXIÓN REALISTA DESDE PSU HACIA MOTHERBOARD, CPU Y GPU)
+      const cablesGroup = new THREE.Group();
+      const matCableNylon = new THREE.MeshStandardMaterial({ color: 0x020617, roughness: 0.8 });
+
+      // Cable 24-Pines ATX (Sube de la PSU y se conecta a la derecha de la Motherboard)
+      const c24Pinos = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-0.1, -1.0, -0.5),
+        new THREE.Vector3(-0.6, -0.4, 0.3),
+        new THREE.Vector3(-0.6, 0.3, 0.35)
+      ]);
+      const mesh24P = new THREE.Mesh(new THREE.TubeGeometry(c24Pinos, 24, 0.035, 8, false), matCableNylon);
+      cablesGroup.add(mesh24P);
+
+      // Cable 8-Pines CPU (Sube por atrás hacia la esquina superior izquierda)
+      const cCpuPower = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-0.2, -1.0, -0.6),
+        new THREE.Vector3(-0.7, 0.2, -0.6),
+        new THREE.Vector3(-0.7, 0.75, -0.35)
+      ]);
+      const meshCpuP = new THREE.Mesh(new THREE.TubeGeometry(cCpuPower, 20, 0.02, 8, false), matCableNylon);
+      cablesGroup.add(meshCpuP);
+
+      // Cables PCIe para la GPU (Conexión directa frontal desde la bahía inferior)
+      const cGpuPower = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-0.1, -1.0, -0.3),
+        new THREE.Vector3(-0.5, -0.3, 0.1),
+        new THREE.Vector3(-0.6, -0.15, 0.2)
+      ]);
+      const meshGpuP = new THREE.Mesh(new THREE.TubeGeometry(cGpuPower, 16, 0.025, 8, false), matCableNylon);
+      cablesGroup.add(meshGpuP);
+
+      cablesGroup.visible = false;
+      scene.add(cablesGroup);
+      meshComponents["Cables"] = cablesGroup;
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    function onResize() {
+      const container = document.getElementById('canvas-container');
+      if (!container) return;
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+
+    /* LÓGICA DE ENSAMBLAJE */
+    let colocados = 0;
+    const totalComponentes = 12;
+
+    function arrastrar(e) {
+      e.dataTransfer.setData("text/plain", e.currentTarget.dataset.componente);
+    }
+
+    function permitirSoltar(e) {
+      e.preventDefault();
+      e.currentTarget.classList.add("activo");
+    }
+
+    document.querySelectorAll(".slot").forEach(slot => {
+      slot.addEventListener("dragleave", () => slot.classList.remove("activo"));
+    });
+
+    function soltar(e) {
+      e.preventDefault();
+      const slot = e.currentTarget;
+      slot.classList.remove("activo");
+
+      const componenteNombre = e.dataTransfer.getData("text/plain");
+      const slotCorrecto = slot.dataset.acepta;
+
+      if (slotCorrecto !== componenteNombre) {
+        mostrarNotificacion(`❌ La pieza no corresponde a este puerto.`, "error");
+        return;
+      }
+
+      if (slot.classList.contains("ocupado")) return;
+
+      slot.classList.add("ocupado");
+      slot.textContent = "✔ " + componenteNombre.toUpperCase();
+
+      const elOriginal = document.querySelector(`.componente[data-componente="${componenteNombre}"]`);
+      if (elOriginal) {
+        elOriginal.classList.add("colocado");
+        elOriginal.setAttribute("draggable", "false");
+      }
+
+      if (meshComponents[componenteNombre]) {
+        meshComponents[componenteNombre].visible = true;
+      }
+
+      colocados++;
+      actualizarProgreso();
+      mostrarNotificacion(`✅ ${componenteNombre} instalado correctamente.`, "exito");
+
+      if (colocados === totalComponentes) {
+        setTimeout(() => {
+          mostrarNotificacion("🏆 ¡Ensamblaje completo con éxito!", "exito");
+        }, 800);
+      }
+    }
+
+    function actualizarProgreso() {
+      document.getElementById("contador").textContent = `${colocados} / ${totalComponentes}`;
+      const porcentaje = (colocados / totalComponentes) * 100;
+      document.getElementById("progresoRelleno").style.width = `${porcentaje}%`;
+    }
+
+    function reiniciarPractica() {
+      colocados = 0;
+      actualizarProgreso();
+
+      document.querySelectorAll(".slot").forEach(slot => {
+        slot.classList.remove("ocupado", "activo");
+        slot.textContent = slot.dataset.acepta.toUpperCase();
+      });
+
+      document.querySelectorAll(".componente").forEach(comp => {
+        comp.classList.remove("colocado");
+        comp.setAttribute("draggable", "true");
+      });
+
+      Object.values(meshComponents).forEach(mesh => mesh.visible = false);
+      mostrarNotificacion("🔄 Práctica reiniciada.", "exito");
+    }
+
+    /* MODO PREGUNTAS */
+    const preguntas = [
+      { pregunta: "¿Qué componente interconecta eléctricamente a todos los demás?", respuestas: ["Placa Madre", "Gabinete", "Fuente de Poder", "SSD"], correcta: 0 },
+      { pregunta: "¿Cuál es la función principal del Procesador (CPU)?", respuestas: ["Almacenar archivos", "Ejecutar instrucciones y cálculos", "Suministrar energía", "Enfriar la PC"], correcta: 1 },
+      { pregunta: "¿Qué tipo de memoria es volátil y pierde sus datos al apagar la PC?", respuestas: ["Disco Duro HDD", "SSD M.2", "Memoria RAM", "Memoria ROM"], correcta: 2 },
+      { pregunta: "¿Qué componente transforma la corriente AC a corriente DC estable?", respuestas: ["Tarjeta Gráfica", "Fuente de Poder (PSU)", "Disipador", "Placa Base"], correcta: 1 },
+      { pregunta: "Para evitar aire atrapado entre CPU y disipador se utiliza:", respuestas: ["Líquido refrigerante", "Cinta aislante", "Pasta Térmica", "Pegamento especial"], correcta: 2 },
+      { pregunta: "¿Qué unidad ofrece las mayores velocidades de lectura/escritura de datos?", respuestas: ["Disco Duro HDD", "Unidad DVD", "SSD M.2 NVMe", "Disquete"], correcta: 2 },
+      { pregunta: "Componente especializado en renderizado de gráficos 3D y video:", respuestas: ["Procesador", "Tarjeta Gráfica (GPU)", "Memoria RAM", "Ventilador"], correcta: 1 },
+      { pregunta: "¿Por qué es riesgoso acumular demasiado polvo dentro del chasis?", respuestas: ["Aumenta el peso", "Obstruye la ventilación y provoca sobrecalentamiento", "Cambia el color de las piezas", "Aumenta el consumo eléctrico"], correcta: 1 },
+      { pregunta: "¿Qué se debe hacer antes de manipular componentes internos?", respuestas: ["Encender el equipo", "Desconectar la energía y liberar estática", "Lavar las piezas con agua", "Soplarlos mientras funcionan"], correcta: 1 },
+      { pregunta: "¿Cuál es la función del sistema de Refrigeración Líquida (AIO)?", respuestas: ["Limpiar la CPU", "Disipar el calor producido por el procesador", "Aumentar la memoria RAM", "Proporcionar iluminación RGB"], correcta: 1 }
+    ];
+
+    let preguntaActual = 0, puntuacion = 0, respondida = false;
+
+    function iniciarQuiz() {
+      preguntaActual = 0;
+      puntuacion = 0;
+      respondida = false;
+      document.getElementById("puntuacion").textContent = "0";
+      document.getElementById("quiz").style.display = "block";
+      document.getElementById("resultado").style.display = "none";
+      mostrarPregunta();
+    }
+
+    function mostrarPregunta() {
+      const q = preguntas[preguntaActual];
+      document.getElementById("numeroPregunta").textContent = preguntaActual + 1;
+      document.getElementById("textoPregunta").textContent = q.pregunta;
+
+      const cont = document.getElementById("respuestas");
+      cont.innerHTML = "";
+      respondida = false;
+      document.getElementById("btnSiguiente").disabled = true;
+
+      q.respuestas.forEach((txt, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "respuesta";
+        btn.textContent = txt;
+        btn.onclick = () => seleccionarRespuesta(btn, idx);
+        cont.appendChild(btn);
+      });
+    }
+
+    function seleccionarRespuesta(btn, idx) {
+      if (respondida) return;
+      respondida = true;
+
+      const q = preguntas[preguntaActual];
+      const btns = document.querySelectorAll(".respuesta");
+      btns.forEach(b => b.disabled = true);
+
+      if (idx === q.correcta) {
+        btn.classList.add("correcta");
+        puntuacion++;
+        document.getElementById("puntuacion").textContent = puntuacion;
+        mostrarNotificacion("✅ ¡Respuesta correcta!", "exito");
+      } else {
+        btn.classList.add("incorrecta");
+        btns[q.correcta].classList.add("correcta");
+        mostrarNotificacion("❌ Respuesta incorrecta.", "error");
+      }
+
+      document.getElementById("btnSiguiente").disabled = false;
+    }
+
+    function siguientePregunta() {
+      if (!respondida) return;
+      preguntaActual++;
+      if (preguntaActual >= preguntas.length) {
+        document.getElementById("quiz").style.display = "none";
+        document.getElementById("resultado").style.display = "block";
+        document.getElementById("resultadoPuntaje").textContent = `${puntuacion} / ${preguntas.length}`;
+        return;
+      }
+      mostrarPregunta();
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      actualizarProgreso();
+    });
+  </script>
+</body>
+</html>
